@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<queries>
+  <sql name="block">
+    begin
+    :b := :a * 2;
+    end;
+  </sql>
+  <sql name="dual">
+    select * from dual
+  </sql>
+</queries>
