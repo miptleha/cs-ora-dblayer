@@ -1,4 +1,4 @@
-﻿namespace KPSService.Db
+﻿namespace Db
 {
     class DbParam
     {

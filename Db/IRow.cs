@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
 
-namespace KPSService.Db
+namespace Db
 {
     interface IRow
     {

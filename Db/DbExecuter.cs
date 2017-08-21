@@ -9,7 +9,7 @@ using System.IO;
 using System.Reflection;
 using System.Xml.Linq;
 
-namespace KPSService.Db
+namespace Db
 {
     /// <summary>
     /// Executes quieries (by names, not by sql).
