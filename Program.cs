@@ -18,6 +18,7 @@ namespace OracleDbLayer
         {
             try
             {
+                log4net.Config.XmlConfigurator.Configure();
                 DbExecuter.Init();
                 
                 //change connection string in App.config
