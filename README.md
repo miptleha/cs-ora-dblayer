@@ -7,10 +7,10 @@ Simple and fast helper class to interact with database
 - mapping query result direct to object
 - support sql parameters
 - support anonimous blocks
-- storing all quieries in xml files
+- storing all quieries in xml files (no sql queries in code! also support dynamic queries)
 - logging all database operation to file and console
 - fast and simple
-- can be adopted to other databases
+- can be adopted to other databases (not only Oracle)
 
 ## How to use
 

@@ -118,8 +118,8 @@ namespace Db
                 }
                 catch (Exception ex)
                 {
-                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", query, ex.Message, CmdText(cmd)));
-                    throw new Exception(string.Format("Error executing query '{0}': {1}", query, ex.Message));
+                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
+                    throw new Exception(string.Format("Error executing query '{0}': {1}", HideDynamic(query), ex.Message));
                 }
                 GetParamsFromCmd(cmd, dbParams);
                 sw.Stop();
@@ -167,8 +167,8 @@ namespace Db
                 }
                 catch (Exception ex)
                 {
-                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", query, ex.Message, CmdText(cmd)));
-                    throw new Exception(string.Format("Error executing query '{0}': {1}", query, ex.Message));
+                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
+                    throw new Exception(string.Format("Error executing query '{0}': {1}", HideDynamic(query), ex.Message));
                 }
                 GetParamsFromCmd(cmd, dbParams);
                 sw.Stop();
@@ -218,8 +218,8 @@ namespace Db
                 }
                 catch (Exception ex)
                 {
-                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", query, ex.Message, CmdText(cmd)));
-                    throw new Exception(string.Format("Error executing query '{0}': {1}", query, ex.Message));
+                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
+                    throw new Exception(string.Format("Error executing query '{0}': {1}", HideDynamic(query), ex.Message));
                 }
                 using (r)
                 {
@@ -294,10 +294,21 @@ namespace Db
 
         private static string GetSql(string query)
         {
+            if (query.StartsWith("<dynamic>"))
+                return query.Substring("<dynamic>".Length).Replace("\r", "");
+
             if (!htQueries.ContainsKey(query))
                 throw new Exception(string.Format("Query not found: '{0}'", query));
 
             return htQueries[query].Replace("\r", "");
+        }
+
+        public static string HideDynamic(string query)
+        {
+            if (query.StartsWith("<dynamic>"))
+                return "<dynamic>";
+
+            return query;
         }
 
         private static string CmdText(OracleCommand cmd)

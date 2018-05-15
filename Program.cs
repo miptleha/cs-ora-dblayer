@@ -43,6 +43,11 @@ namespace OracleDbLayer
                 if (o.Count != 1 && o[0].Dummy != "X")
                     throw new Exception("hm");
 
+                //dynamic query (not from sql folder)
+                o = DbExecuter.Select<Dual>("<dynamic>select * from dual");
+                if (o.Count != 1 && o[0].Dummy != "X")
+                    throw new Exception("hm");
+
                 log.Debug("all ok");
             }
             catch (Exception ex)
