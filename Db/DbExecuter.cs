@@ -12,9 +12,9 @@ using System.Xml.Linq;
 namespace Db
 {
     /// <summary>
-    /// Executes quieries (by names, not by sql).
+    /// Executes quieries (by names, not by sql). Queries stored in 'bin\debug\sql' folder
     /// Fill objects with data for select commands (can load classes with IRow interface implementation).
-    /// Logs all query execution, errors
+    /// Logs all query execution, errors. Logs stored in 'bin\debug\log' folder
     /// </summary>
     class DbExecuter
     {
@@ -30,6 +30,11 @@ namespace Db
         /// This option is also available for some methos (to silent execute only specific queries)
         /// </summary>
         public static bool SilentMode { get; set; }
+
+        /// <summary>
+        /// Duration in seconds, after which it is notified that the request is executed for a long time
+        /// </summary>
+        public static double LogRequestTime = 1;
 
         /// <summary>
         /// Load all sql-queries from sql folder.
@@ -118,7 +123,7 @@ namespace Db
                 }
                 GetParamsFromCmd(cmd, dbParams);
                 sw.Stop();
-                if (!SilentMode && sw.Elapsed.TotalSeconds > 1)
+                if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
                     log.Debug(string.Format("!Long request '{0}'. Rows affected: {1}. Executed in: {2}", query, res, sw.Elapsed.ToString()));
             }
             return res;
@@ -167,7 +172,7 @@ namespace Db
                 }
                 GetParamsFromCmd(cmd, dbParams);
                 sw.Stop();
-                if (!SilentMode && sw.Elapsed.TotalSeconds > 1)
+                if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
                     log.Debug(string.Format("!Long request '{0}' for scalar. Read value: '{1}'. Executed in: {2}", query, res, sw.Elapsed.ToString()));
             }
             return res;
@@ -236,7 +241,7 @@ namespace Db
                     }
                 }
                 sw.Stop();
-                if (!SilentMode && sw.Elapsed.TotalSeconds > 1)
+                if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
                     log.Debug(string.Format("!Long request '{0}' for reading {1}. Read {2} rows. Executed in: {3}", query, typeof(T), cnt, sw.Elapsed.ToString()));
             }
             return res;
