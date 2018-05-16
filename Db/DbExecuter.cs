@@ -373,7 +373,15 @@ namespace Db
             cmd.BindByName = true;
             foreach (var p in dbParams)
             {
-                OracleParameter op = new OracleParameter(p.Name, p.Value);
+                OracleParameter op = null;
+                try
+                {
+                    op = new OracleParameter(p.Name, p.Value);
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Error (" + ex.Message + ") creating parameter: Name=" + p.Name + ", Value=" + p.Value);
+                }
                 if (p.Output)
                 {
                     op.Size = 1000;
