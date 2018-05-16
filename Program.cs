@@ -36,17 +36,22 @@ namespace OracleDbLayer
                 //select dummy as scalar
                 var x = DbExecuter.SelectScalar("dual");
                 if (x.ToString() != "X")
-                    throw new Exception("uh oh");
+                    throw new Exception("error in SelectScalar");
 
                 //select dummy as object
+                var i = DbExecuter.SelectRow<Dual>("dual");
+                if (i.Dummy != "X")
+                    throw new Exception("error in SelectRow");
+
+                //select dummy as List of objects
                 var o = DbExecuter.Select<Dual>("dual");
                 if (o.Count != 1 && o[0].Dummy != "X")
-                    throw new Exception("hm");
+                    throw new Exception("error in Select");
 
                 //dynamic query (not from sql folder)
                 o = DbExecuter.Select<Dual>("<dynamic>select * from dual");
                 if (o.Count != 1 && o[0].Dummy != "X")
-                    throw new Exception("hm");
+                    throw new Exception("error in dynamic query");
 
                 log.Debug("all ok");
             }
