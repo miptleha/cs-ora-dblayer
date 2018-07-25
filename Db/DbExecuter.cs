@@ -34,7 +34,7 @@ namespace Db
         /// <summary>
         /// Duration in seconds, after which it is notified that the request is executed for a long time
         /// </summary>
-        public static double LogRequestTime = 1;
+        public static double LogRequestTime = 2;
 
         /// <summary>
         /// Load all sql-queries from sql folder.
@@ -81,135 +81,246 @@ namespace Db
         }
 
         /// <summary>
-        /// Executes DML block (insert, update, anonymouse block)
+        /// Manual opening of connection (for transaction)
         /// </summary>
-        /// <param name="query">name of the query (not sql text)</param>
-        /// <param name="dbParams">parameters for query</param>
-        /// <returns></returns>
-        public static int Execute(string query, params DbParam[] dbParams)
+        /// <returns>open connection</returns>
+        public static OracleConnection OpenConnection()
         {
-            return Execute(query, false, dbParams);
+            var con = new OracleConnection(ConnectionString);
+            con.Open();
+            return con;
         }
+
 
         /// <summary>
         /// Executes DML block (insert, update, anonymouse block)
         /// </summary>
         /// <param name="query">name of the query (not sql text)</param>
-        /// <param name="silentMode">if true, do not output debug information to log file</param>
         /// <param name="dbParams">parameters for query</param>
-        /// <returns></returns>
-        public static int Execute(string query, bool silentMode, params DbParam[] dbParams)
+        /// <returns>number of rows affected</returns>
+        public static int Execute(string query, params DbParam[] dbParams)
+        {
+            return Execute(null, query, false, true, dbParams);
+        }
+
+        /// <summary>
+        /// Executes DML block (insert, update, anonymouse block)
+        /// </summary>
+        /// <param name="trans">transaction, if specified, new connection does not open</param>
+        /// <param name="query">name of the query (not sql text)</param>
+        /// <param name="dbParams">parameters for query</param>
+        /// <returns>number of rows affected</returns>
+        public static int Execute(OracleTransaction trans, string query, params DbParam[] dbParams)
+        {
+            return Execute(trans, query, false, true, dbParams);
+        }
+
+        /// <summary>
+        /// Executes DML block (insert, update, anonymouse block)
+        /// </summary>
+        /// <param name="trans">transaction, if specified, new connection does not open</param>
+        /// <param name="query">name of the query (not sql text)</param>
+        /// <param name="silentMode">if true, do not output debug information to log file</param>
+        /// <param name="showParams">if false, do not output parameters value to log file</param>
+        /// <param name="dbParams">parameters for query</param>
+        /// <returns>number of rows affected</returns>
+        public static int Execute(OracleTransaction trans, string query, bool silentMode, bool showParams, params DbParam[] dbParams)
         {
             int res = 0;
-            using (var con = new OracleConnection(ConnectionString))
+
+            OracleConnection con = null;
+            if (trans != null)
             {
+                con = trans.Connection;
+            }
+            else
+            {
+                con = new OracleConnection(ConnectionString);
                 con.Open();
+            }
+
+            try
+            {
                 var sw = Stopwatch.StartNew();
                 var cmd = con.CreateCommand();
                 cmd.CommandText = GetSql(query);
                 cmd.Connection = con;
+                cmd.Transaction = trans;
                 SetParamsInCmd(cmd, dbParams);
 
                 if (!SilentMode && !silentMode)
-                    log.Debug(string.Format("Execute query '{0}'{1}", query, ParamText(cmd)));
+                    log.Debug(string.Format("Execute query {2}'{0}'{1}", query, showParams ? ParamText(cmd) : "", trans != null ? "(transaction) " : ""));
                 try
                 {
                     res = cmd.ExecuteNonQuery();
                 }
                 catch (Exception ex)
                 {
-                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
-                    throw new Exception(string.Format("Error executing query '{0}': {1}", HideDynamic(query), ex.Message));
+                    throw new Exception(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
                 }
                 GetParamsFromCmd(cmd, dbParams);
                 sw.Stop();
                 if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
                     log.Debug(string.Format("!Long request '{0}'. Rows affected: {1}. Executed in: {2}", query, res, sw.Elapsed.ToString()));
             }
+            finally
+            {
+                if (trans == null)
+                    con.Close();
+            }
+
             return res;
         }
 
         /// <summary>
-        /// Executes DML block (insert, update, anonymouse block)
+        /// Select single value
         /// </summary>
         /// <param name="query">name of the query (not sql text)</param>
         /// <param name="dbParams">parameters for query</param>
-        /// <returns></returns>
+        /// <returns>Selected value</returns>
         public static object SelectScalar(string query, params DbParam[] dbParams)
         {
-            return SelectScalar(query, false, dbParams);
+            return SelectScalar(null, query, false, true, dbParams);
         }
 
         /// <summary>
-        /// Executes DML block (insert, update, anonymouse block)
+        /// Select single value
         /// </summary>
+        /// <param name="trans">transaction, if specified, new connection does not open</param>
+        /// <param name="query">name of the query (not sql text)</param>
+        /// <param name="dbParams">parameters for query</param>
+        /// <returns>Selected value</returns>
+        public static object SelectScalar(OracleTransaction trans, string query, params DbParam[] dbParams)
+        {
+            return SelectScalar(trans, query, false, true, dbParams);
+        }
+
+        /// <summary>
+        /// Select single value
+        /// </summary>
+        /// <param name="trans">transaction, if specified, new connection does not open</param>
         /// <param name="query">name of the query (not sql text)</param>
         /// <param name="silentMode">if true, do not output debug information to log file</param>
+        /// <param name="showParams">if false, do not output parameters value to log file</param>
         /// <param name="dbParams">parameters for query</param>
-        /// <returns></returns>
-        public static object SelectScalar(string query, bool silentMode, params DbParam[] dbParams)
+        /// <returns>Selected value</returns>
+        public static object SelectScalar(OracleTransaction trans, string query, bool silentMode, bool showParams, params DbParam[] dbParams)
         {
             object res = null;
-            using (var con = new OracleConnection(ConnectionString))
+
+            OracleConnection con = null;
+            if (trans != null)
             {
+                con = trans.Connection;
+            }
+            else
+            {
+                con = new OracleConnection(ConnectionString);
                 con.Open();
+            }
+
+            try
+            {
                 var sw = Stopwatch.StartNew();
                 var cmd = con.CreateCommand();
                 cmd.CommandText = GetSql(query);
                 cmd.Connection = con;
+                cmd.Transaction = trans;
                 SetParamsInCmd(cmd, dbParams);
 
                 if (!SilentMode && !silentMode)
-                    log.Debug(string.Format("Execute query '{0}'{1}", query, ParamText(cmd)));
+                    log.Debug(string.Format("Execute query {2}'{0}'{1}", query, showParams ? ParamText(cmd) : "", trans != null ? "(transaction) " : ""));
                 try
                 {
                     res = cmd.ExecuteScalar();
                 }
                 catch (Exception ex)
                 {
-                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
-                    throw new Exception(string.Format("Error executing query '{0}': {1}", HideDynamic(query), ex.Message));
+                    throw new Exception(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
                 }
                 GetParamsFromCmd(cmd, dbParams);
                 sw.Stop();
                 if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
                     log.Debug(string.Format("!Long request '{0}' for scalar. Read value: '{1}'. Executed in: {2}", query, res, sw.Elapsed.ToString()));
             }
+            finally
+            {
+                if (trans == null)
+                    con.Close();
+            }
             return res;
         }
 
         /// <summary>
-        /// Selects object from db
+        /// Select rows into list of entities (must support IRow interface)
         /// </summary>
         /// <param name="query">name of the query (not sql text)</param>
         /// <param name="dbParams">parameters for query</param>
-        /// <returns></returns>
+        /// <returns>List of entities</returns>
         public static List<T> Select<T>(string query, params DbParam[] dbParams) where T : IRow, new()
         {
-            return Select<T>(query, false, dbParams);
+            return Select<T>(null, query, false, true, dbParams);
         }
 
         /// <summary>
-        /// Selects object from db
+        /// Select rows into list of entities (must support IRow interface)
+        /// </summary>
+        /// <param name="trans">transaction, if specified, new connection does not open</param>
+        /// <param name="query">name of the query (not sql text)</param>
+        /// <param name="dbParams">parameters for query</param>
+        /// <returns>List of entities</returns>
+        public static List<T> Select<T>(OracleTransaction trans, string query, params DbParam[] dbParams) where T : IRow, new()
+        {
+            return Select<T>(trans, query, false, true, dbParams);
+        }
+
+        /// <summary>
+        /// Select rows into list of entities (must support IRow interface)
         /// </summary>
         /// <param name="query">name of the query (not sql text)</param>
         /// <param name="silentMode">if true, do not output debug information to log file</param>
         /// <param name="dbParams">parameters for query</param>
-        /// <returns></returns>
+        /// <returns>List of entities</returns>
         public static List<T> Select<T>(string query, bool silentMode, params DbParam[] dbParams) where T : IRow, new()
         {
+            return Select<T>(null, query, silentMode, true, dbParams);
+        }
+
+        /// <summary>
+        /// Select rows into list of entities (must support IRow interface)
+        /// </summary>
+        /// <param name="trans">transaction, if specified, new connection does not open</param>
+        /// <param name="query">name of the query (not sql text)</param>
+        /// <param name="silentMode">if true, do not output debug information to log file</param>
+        /// <param name="showParams">if false, do not output parameters value to log file</param>
+        /// <param name="dbParams">parameters for query</param>
+        /// <returns>List of entities</returns>
+        public static List<T> Select<T>(OracleTransaction trans, string query, bool silentMode, bool showParams, params DbParam[] dbParams) where T : IRow, new()
+        {
             var res = new List<T>();
-            using (var con = new OracleConnection(ConnectionString))
+ 
+            OracleConnection con = null;
+            if (trans != null)
             {
+                con = trans.Connection;
+            }
+            else
+            {
+                con = new OracleConnection(ConnectionString);
                 con.Open();
+            }
+
+            try
+            {
                 var sw = Stopwatch.StartNew();
                 var cmd = con.CreateCommand();
                 cmd.CommandText = GetSql(query);
                 cmd.Connection = con;
+                cmd.Transaction = trans;
                 SetParamsInCmd(cmd, dbParams);
 
                 if (!SilentMode && !silentMode)
-                    log.Debug(string.Format("Execute query '{0}'{1}", query, ParamText(cmd)));
+                    log.Debug(string.Format("Execute query {2}'{0}'{1}", query, showParams ? ParamText(cmd) : "", trans != null ? "(transaction) " : ""));
                 int cnt = 0;
                 OracleDataReader r = null;
                 try
@@ -218,8 +329,7 @@ namespace Db
                 }
                 catch (Exception ex)
                 {
-                    log.Debug(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
-                    throw new Exception(string.Format("Error executing query '{0}': {1}", HideDynamic(query), ex.Message));
+                    throw new Exception(string.Format("Error executing query '{0}': {1}\n{2}", HideDynamic(query), ex.Message, CmdText(cmd)));
                 }
                 using (r)
                 {
@@ -244,6 +354,12 @@ namespace Db
                 if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
                     log.Debug(string.Format("!Long request '{0}' for reading {1}. Read {2} rows. Executed in: {3}", query, typeof(T), cnt, sw.Elapsed.ToString()));
             }
+            finally
+            {
+                if (trans == null)
+                    con.Close();
+            }
+
             return res;
         }
 
@@ -252,22 +368,36 @@ namespace Db
         /// </summary>
         /// <param name="query">name of the query (not sql text)</param>
         /// <param name="dbParams">parameters for query</param>
-        /// <returns></returns>
+        /// <returns>Entity</returns>
         public static T SelectRow<T>(string query, params DbParam[] dbParams) where T : IRow, new()
         {
-            return SelectRow<T>(query, false, dbParams);
+            return SelectRow<T>(null, query, false, true, dbParams);
         }
 
         /// <summary>
         /// Select only first row from query
         /// </summary>
+        /// <param name="trans">transaction, if specified, new connection does not open</param>
+        /// <param name="query">name of the query (not sql text)</param>
+        /// <param name="dbParams">parameters for query</param>
+        /// <returns>Entity</returns>
+        public static T SelectRow<T>(OracleTransaction trans, string query, params DbParam[] dbParams) where T : IRow, new()
+        {
+            return SelectRow<T>(trans, query, false, true, dbParams);
+        }
+
+        /// <summary>
+        /// Select only first row from query
+        /// </summary>
+        /// <param name="trans">transaction, if specified, new connection does not open</param>
         /// <param name="query">name of the query (not sql text)</param>
         /// <param name="silentMode">if true, do not output debug information to log file</param>
+        /// <param name="showParams">if false, do not output parameters value to log file</param>
         /// <param name="dbParams">parameters for query</param>
-        /// <returns></returns>
-        public static T SelectRow<T>(string query, bool silentMode, params DbParam[] dbParams) where T : IRow, new()
+        /// <returns>Entity</returns>
+        public static T SelectRow<T>(OracleTransaction trans, string query, bool silentMode, bool showParams, params DbParam[] dbParams) where T : IRow, new()
         {
-            var list = Select<T>(query, silentMode, dbParams);
+            var list = Select<T>(trans, query, silentMode, showParams, dbParams);
             return list.Count > 0 ? list[0] : default(T);
         }
 
@@ -314,9 +444,11 @@ namespace Db
         private static string CmdText(OracleCommand cmd)
         {
             string str = cmd.CommandText;
+
             foreach (OracleParameter p in cmd.Parameters)
             {
-                str += string.Format("\n{0}: {1}", p.ParameterName, p.Value == null || p.Value == DBNull.Value ? "null" : "'" + p.Value + "'");
+                str += string.Format("\n{0}: {1}", p.ParameterName, p.Value == null || p.Value == DBNull.Value ? "null" : "'" +
+                    (p.Value.ToString().Length > 100 ? p.Value.ToString().Substring(0, 100) + "..." : p.Value.ToString()) + "'");
             }
             return str;
         }
