@@ -118,6 +118,19 @@ namespace Db
         /// <summary>
         /// Executes DML block (insert, update, anonymouse block)
         /// </summary>
+        /// <param name="query">name of the query (not sql text)</param>
+        /// <param name="silentMode">if true, do not output debug information to log file</param>
+        /// <param name="showParams">if false, do not output parameters value to log file</param>
+        /// <param name="dbParams">parameters for query</param>
+        /// <returns>number of rows affected</returns>
+        public static int Execute(string query, bool silentMode, bool showParams, params DbParam[] dbParams)
+        {
+            return Execute(null, query, silentMode, showParams, dbParams);
+        }
+
+        /// <summary>
+        /// Executes DML block (insert, update, anonymouse block)
+        /// </summary>
         /// <param name="trans">transaction, if specified, new connection does not open</param>
         /// <param name="query">name of the query (not sql text)</param>
         /// <param name="silentMode">if true, do not output debug information to log file</param>
