@@ -174,7 +174,7 @@ namespace Db
                 GetParamsFromCmd(cmd, dbParams);
                 sw.Stop();
                 if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
-                    log.Debug(string.Format("!Long request '{0}'. Rows affected: {1}. Executed in: {2}", query, res, sw.Elapsed.ToString()));
+                    log.Debug(string.Format("!Long request '{0}'. Rows affected: {1}. Executed in: {2}{3}", query, res, sw.Elapsed.ToString(), showParams ? ParamText(cmd) : ""));
             }
             finally
             {
@@ -254,7 +254,7 @@ namespace Db
                 GetParamsFromCmd(cmd, dbParams);
                 sw.Stop();
                 if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
-                    log.Debug(string.Format("!Long request '{0}' for scalar. Read value: '{1}'. Executed in: {2}", query, res, sw.Elapsed.ToString()));
+                    log.Debug(string.Format("!Long request '{0}' for scalar. Read value: '{1}'. Executed in: {2}{3}", query, res, sw.Elapsed.ToString(), showParams ? ParamText(cmd) : ""));
             }
             finally
             {
@@ -365,7 +365,7 @@ namespace Db
                 }
                 sw.Stop();
                 if (!SilentMode && sw.Elapsed.TotalSeconds > LogRequestTime)
-                    log.Debug(string.Format("!Long request '{0}' for reading {1}. Read {2} rows. Executed in: {3}", query, typeof(T), cnt, sw.Elapsed.ToString()));
+                    log.Debug(string.Format("!Long request '{0}' for reading {1}. Read {2} rows. Executed in: {3}{4}", query, typeof(T), cnt, sw.Elapsed.ToString(), showParams ? ParamText(cmd) : ""));
             }
             finally
             {
