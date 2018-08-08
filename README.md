@@ -1,4 +1,3 @@
-# csharp-oracle-dblayer
 Simple and fast helper class to interact with Oracle database
 
 ## Features
