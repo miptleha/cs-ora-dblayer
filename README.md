@@ -6,9 +6,11 @@ Simple and fast helper class to interact with Oracle database
 - mapping query result direct to object
 - support sql parameters
 - support anonimous blocks
+- support transactions
 - storing all quieries in xml files (no sql queries in code! also support dynamic queries)
 - logging all database operation to file and console
 - fast and simple
+- methods: Select (select list of instances), SelectRow (select instance), SelectScalar (select value), Execute (data modification)
 - can be adopted to work with other databases
 
 ## How to use
